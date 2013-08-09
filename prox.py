@@ -161,7 +161,7 @@ class Proxy(object) :
         self.opt = opt
         self.cl = Half(opt, sock, addr, 'i')
         # note: blocking connect for simplicity for now...
-        peer = tcpConnect(opt.ip6, opt.addr, opt.port, 0, opt.ssl)
+        peer = tcpConnect(opt.ip6, opt.addr, opt.port, 0, bool(opt.ssl) ^ bool(opt.sslTerm))
         self.peer = Half(opt, peer, addr, 'o')
 
         self.cl.dest = self.peer
@@ -215,6 +215,7 @@ def getopts() :
     p.add_option("-A", dest="autoCname", action="store", help="CName for Auto-generated SSL cert")
     p.add_option('-1', dest='oneshot', action='store_true', help="Handle a single connection")
     p.add_option("-l", dest="logFile", help="Filename to log to")
+    p.add_option("-t", dest="sslTerm", action="store_true", help="Terminate SSL connections and forward unencrypted traffic")
     opt,args = p.parse_args()
     if opt.bindAddr == '0.0.0.0' and opt.ip6 :
         opt.bindAddr = '::'
@@ -227,6 +228,8 @@ def getopts() :
             p.error("specify CA cert")
         else :
             p.error("specify SSL cert")
+    if opt.sslTerm and opt.ssl is None :
+            p.error("enable SSL in order to terminate SSL connections")
     opt.addr = args[0]
     try :
         opt.port = int(args[1])
